@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 
 const TranslateService = require('./TranslateService');
+const dictionaryService = require('../dictionaryService');
 
 const API = 'https://api.mymemory.translated.net/get';
 
@@ -13,7 +14,11 @@ class MyMemoryTranslateService extends TranslateService {
 
       fetch(URL)
         .then(data => data.json())
-        .then(data => resolve(data.responseData.translatedText))
+        .then(data => {
+          const translatedText = data.responseData.translatedText;
+          this.log.addEntry(key, to, translatedText);
+          resolve(dictionaryService.createEntry(key, translatedText));
+        })
         .catch(err => reject(err));
     });
   }
