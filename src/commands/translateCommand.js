@@ -1,19 +1,20 @@
 const dictionaryService = require('../dictionaryService');
-const YandexTranslateService = require('../translate/YandexTranslateService');
 const TranslateDictionaryService = require('../translate/TranslateDictionaryService');
 const translationLog = require('../../src/translate/TranslationLog');
+const TranslateServiceFactory = require('../factories/TranslationServiceFactory');
 
 async function translateCommand (source, target, options) {
-  const apiKey = process.env.YANDEX_API_KEY || options.yandexApiKey;
+  const apiKey = process.env.API_KEY || options.apiKey;
   if (!apiKey) {
-    console.log('Yandex API key is not defined');
+    console.log('Translation Service API key is not defined. If your service does not require API key, provide any text.');
     return;
   }
   try {
     console.log(`Translating '${source}' to ${target}`);
     const sourceDict = await dictionaryService.readDict(source);
     const targetDict = await dictionaryService.readDict(target);
-    const translationService = new YandexTranslateService(apiKey);
+    const CurrentTranslationService = TranslateServiceFactory(options.service);
+    const translationService = new CurrentTranslationService(apiKey);
     const translateDictionaryService = new TranslateDictionaryService(translationService, {
       keys: options.keys
     });

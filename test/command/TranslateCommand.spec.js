@@ -6,8 +6,14 @@ const dictionaryService = require('../../src/dictionaryService');
 const translationLog = require('../../src/translate/TranslationLog');
 
 const yandexTranslateStub = sinon.stub();
+const myMemoryTranslateStub = sinon.stub();
 const dictionaryTranslateStub = sinon.stub();
 const tested = proxyquire('../../src/commands/translateCommand', {
+  '../../src/translate/MyMemoryTranslateService': function () {
+    return {
+      translate: myMemoryTranslateStub
+    };
+  },
   '../../src/translate/YandexTranslateService': function () {
     return {
       translate: yandexTranslateStub
@@ -21,6 +27,12 @@ const tested = proxyquire('../../src/commands/translateCommand', {
 });
 
 yandexTranslateStub.callsFake(() => {
+  return new Promise((resolve) => {
+    resolve({ newDict: true });
+  });
+});
+
+myMemoryTranslateStub.callsFake(() => {
   return new Promise((resolve) => {
     resolve({ newDict: true });
   });
@@ -47,16 +59,16 @@ describe('translateCommand', () => {
     dictionaryTranslateStub.resetHistory();
   });
 
-  it('should not process without Yandex API key', async () => {
+  it('should not process without Service API key', async () => {
     await tested('./source.xml', './target.xml', {});
 
     expect(dictionaryTranslateStub).to.not.have.been.called;
     expect(this.saveDictStub).to.not.have.been.called;
-    expect(this.consoleSpy).to.have.been.calledWithExactly('Yandex API key is not defined');
+    expect(this.consoleSpy).to.have.been.calledWithExactly('Translation Service API key is not defined. If your service does not require API key, provide any text.');
   });
 
   it('should not sort translated dict if sorting is diabled', async () => {
-    await tested('./source.xml', './target.xml', { yandexApiKey: 'fakeKey', disableSorting: true });
+    await tested('./source.xml', './target.xml', { apiKey: 'fakeKey', disableSorting: true });
 
     expect(dictionaryTranslateStub).to.have.been.calledOnce;
     expect(this.saveDictStub).to.have.been.calledOnce;
@@ -64,7 +76,7 @@ describe('translateCommand', () => {
   });
 
   it('should process command normally', async () => {
-    await tested('./source.xml', './target.xml', { yandexApiKey: 'fakeKey', disableLogOutput: false });
+    await tested('./source.xml', './target.xml', { apiKey: 'fakeKey', disableLogOutput: false });
 
     expect(dictionaryTranslateStub).to.have.been.calledOnce;
     expect(this.saveDictStub).to.have.been.calledOnce;
@@ -73,7 +85,7 @@ describe('translateCommand', () => {
   });
 
   it('should not print log at the end when disabledLog options is set', async () => {
-    await tested('./source.xml', './target.xml', { yandexApiKey: 'fakeKey', disableLogOutput: true });
+    await tested('./source.xml', './target.xml', { apiKey: 'fakeKey', disableLogOutput: true });
 
     expect(dictionaryTranslateStub).to.have.been.calledOnce;
     expect(this.saveDictStub).to.have.been.calledOnce;
@@ -84,7 +96,7 @@ describe('translateCommand', () => {
     const err = new Error('what a terrible failure!');
     dictionaryTranslateStub.throws(err);
 
-    await tested('./source.xml', './target.xml', { yandexApiKey: 'fakeKey' });
+    await tested('./source.xml', './target.xml', { apiKey: 'fakeKey' });
 
     expect(dictionaryTranslateStub).to.have.been.calledOnce;
     expect(this.saveDictStub).to.not.have.been.called;
