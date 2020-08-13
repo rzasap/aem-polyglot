@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
 const converter = require('xml-js');
 const alphabetize = require('alphabetize-object-keys');
@@ -73,20 +74,23 @@ function sort (dict) {
   return alphabetize(dict);
 }
 
-function listDict (path) {
-  const paths = fs.readdirSync(path);
+function listDict (_path) {
+  const normalizedPath = path.resolve(_path);
+  const paths = fs.readdirSync(normalizedPath);
   return _.filter(paths, (item) => {
     return !item.startsWith('.') && item.endsWith('.xml');
   });
 }
 
-function exists (path) {
-  return fs.existsSync(path);
+function exists (_path) {
+  const normalizedPath = path.resolve(_path);
+  return fs.existsSync(normalizedPath);
 }
 
 async function readDict (source) {
   return new Promise((resolve, reject) => {
-    fs.readFile(source, 'utf-8', (err, data) => {
+    const normalizedPath = path.resolve(source);
+    fs.readFile(normalizedPath, 'utf-8', (err, data) => {
       if (err) {
         reject(err);
       } else {
